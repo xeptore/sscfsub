@@ -107,7 +107,7 @@ func TestGetTraffic(t *testing.T) {
 
 func TestBuildSubscriptionSetsCredsAndInfo(t *testing.T) {
 	expiry := time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC).UnixMilli()
-	configs, err := buildSubscription("test.tpl.json", "hosts.yaml", clientCreds{
+	configs, err := buildSubscription("test.tpl.json", "test.hosts.yaml", clientCreds{
 		Email:    "alice@example.com",
 		Password: "ss-secret",
 	}, clientUsage{
