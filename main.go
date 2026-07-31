@@ -13,10 +13,10 @@ import (
 )
 
 func main() {
-	listen := flag.String("listen", envOr("LISTEN", ":8080"), "HTTP listen address")
+	listen := flag.String("listen", envOr("LISTEN", "127.0.0.1:8080"), "HTTP listen address")
 	panelURL := flag.String("panel-url", envOr("PANEL_URL", ""), "3x-ui panel base URL (including webBasePath if any)")
 	panelToken := flag.String("panel-token", envOr("PANEL_TOKEN", ""), "3x-ui API bearer token")
-	templatePath := flag.String("template", envOr("TEMPLATE", "subscription.tpl.json"), "path to subscription JSON template")
+	templatePath := flag.String("template", envOr("TEMPLATE", "tpl.json"), "path to subscription JSON template")
 	hostsPath := flag.String("hosts", envOr("HOSTS", "hosts.yaml"), "path to hosts YAML (hostname → IP list)")
 	configPath := flag.String("config", envOr("CONFIG", "config.yaml"), "path to app config (subscription headers)")
 	flag.Parse()
