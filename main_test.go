@@ -107,7 +107,7 @@ func TestGetTraffic(t *testing.T) {
 
 func TestBuildSubscriptionSetsCredsAndInfo(t *testing.T) {
 	expiry := time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC).UnixMilli()
-	configs, err := buildSubscription("subscription.tpl.json", "hosts.yaml", clientCreds{
+	configs, err := buildSubscription("test.tpl.json", "hosts.yaml", clientCreds{
 		Email:    "alice@example.com",
 		Password: "ss-secret",
 	}, clientUsage{
@@ -164,7 +164,7 @@ func TestUsageRemarkUnlimited(t *testing.T) {
 }
 
 func TestSubscriptionHeaders(t *testing.T) {
-	cfg, err := loadConfig("config.yaml")
+	cfg, err := loadConfig("test.config.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -194,7 +194,7 @@ func TestSubscriptionHeaders(t *testing.T) {
 	if got := h.Get("profile-web-page-url"); got != "https://sub.example.com/sub?email=alice@example.com" {
 		t.Fatalf("profile-web-page-url = %q", got)
 	}
-	if got := h.Get("server"); got != "cloudflare" {
+	if got := h.Get("server"); got != "github" {
 		t.Fatalf("server = %q", got)
 	}
 	wantInfo := fmt.Sprintf("upload=0; download=14332111; total=107374182400; expire=%d", expiryMS/1000)
