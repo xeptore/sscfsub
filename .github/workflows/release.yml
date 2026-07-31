@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -61,8 +62,24 @@ jobs:
           path: ${{ steps.binary.outputs.name }}
           if-no-files-found: error
 
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Test
+        run: go test ./...
+
   release:
-    needs: build
+    if: github.event_name != 'pull_request'
+    needs: [build, test]
     runs-on: ubuntu-latest
 
     steps:
