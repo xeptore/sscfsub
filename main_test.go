@@ -25,18 +25,56 @@ func TestGetClient(t *testing.T) {
 					"password": "ss-secret",
 					"enable":   true,
 				},
+				"inboundIds": []int{7},
 			},
 		})
 	})
 	ts := httptest.NewServer(mux)
 	t.Cleanup(ts.Close)
 
-	client, err := NewPanelClient(ts.URL, "test-token").GetClient("alice@example.com")
+	client, inboundIDs, err := NewPanelClient(ts.URL, "test-token").GetClient("alice@example.com")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if client.Email != "alice@example.com" || client.Password != "ss-secret" {
 		t.Fatalf("got %+v", client)
+	}
+	if len(inboundIDs) != 1 || inboundIDs[0] != 7 {
+		t.Fatalf("inboundIDs = %v", inboundIDs)
+	}
+}
+
+func TestGetInboundPassword(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /panel/api/inbounds/get/{id}", func(w http.ResponseWriter, r *http.Request) {
+		settings, _ := json.Marshal(map[string]any{
+			"method":   "2022-blake3-aes-256-gcm",
+			"password": "server-psk",
+		})
+		// settings is historically a JSON-encoded string column.
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"success": true,
+			"obj": map[string]any{
+				"id":       7,
+				"settings": string(settings),
+			},
+		})
+	})
+	ts := httptest.NewServer(mux)
+	t.Cleanup(ts.Close)
+
+	pass, err := NewPanelClient(ts.URL, "tok").GetInboundPassword(7)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pass != "server-psk" {
+		t.Fatalf("password = %q", pass)
+	}
+}
+
+func TestSS2022Password(t *testing.T) {
+	if got := ss2022Password("server", "client"); got != "server:client" {
+		t.Fatalf("got %q", got)
 	}
 }
 

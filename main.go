@@ -95,7 +95,7 @@ func (s *server) handleSub(w http.ResponseWriter, r *http.Request) {
 		email = decoded
 	}
 
-	client, err := s.panel.GetClient(email)
+	client, inboundIDs, err := s.panel.GetClient(email)
 	if err != nil {
 		switch {
 		case errors.Is(err, errClientNotFound):
@@ -104,9 +104,25 @@ func (s *server) handleSub(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "client disabled", http.StatusForbidden)
 		case errors.Is(err, errNoPassword):
 			http.Error(w, "client has no password", http.StatusUnprocessableEntity)
+		case errors.Is(err, errNoInbound):
+			http.Error(w, "client has no inbound", http.StatusUnprocessableEntity)
 		default:
 			log.Printf("panel lookup %q: %v", email, err)
 			http.Error(w, "panel lookup failed", http.StatusBadGateway)
+		}
+		return
+	}
+
+	inboundPassword, err := s.panel.GetInboundPassword(inboundIDs[0])
+	if err != nil {
+		switch {
+		case errors.Is(err, errClientNotFound):
+			http.Error(w, "inbound not found", http.StatusNotFound)
+		case errors.Is(err, errNoInboundPassword):
+			http.Error(w, "inbound has no password", http.StatusUnprocessableEntity)
+		default:
+			log.Printf("panel inbound %d for %q: %v", inboundIDs[0], email, err)
+			http.Error(w, "panel inbound lookup failed", http.StatusBadGateway)
 		}
 		return
 	}
@@ -134,7 +150,7 @@ func (s *server) handleSub(w http.ResponseWriter, r *http.Request) {
 
 	configs, err := buildSubscription(s.templatePath, s.hostsPath, clientCreds{
 		Email:    client.Email,
-		Password: client.Password,
+		Password: ss2022Password(inboundPassword, client.Password),
 	}, usage)
 	if err != nil {
 		log.Printf("build subscription for %q: %v", email, err)

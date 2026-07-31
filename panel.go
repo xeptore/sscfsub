@@ -35,7 +35,8 @@ type panelResponse struct {
 }
 
 type clientPayload struct {
-	Client panelClient `json:"client"`
+	Client     panelClient `json:"client"`
+	InboundIds []int       `json:"inboundIds"`
 }
 
 type panelClient struct {
@@ -56,28 +57,42 @@ type panelTraffic struct {
 	Enable     bool   `json:"enable"`
 }
 
+type panelInbound struct {
+	ID       int             `json:"id"`
+	Settings json.RawMessage `json:"settings"`
+}
+
+type shadowsocksInboundSettings struct {
+	Password string `json:"password"`
+}
+
 var (
-	errClientNotFound = errors.New("client not found")
-	errClientDisabled = errors.New("client disabled")
-	errNoPassword     = errors.New("client has no shadowsocks password")
+	errClientNotFound     = errors.New("client not found")
+	errClientDisabled     = errors.New("client disabled")
+	errNoPassword         = errors.New("client has no shadowsocks password")
+	errNoInbound          = errors.New("client has no inbound")
+	errNoInboundPassword  = errors.New("inbound has no shadowsocks password")
 )
 
 // GetClient fetches a client by email via GET /panel/api/clients/get/{email}.
-func (p *PanelClient) GetClient(email string) (*panelClient, error) {
+func (p *PanelClient) GetClient(email string) (*panelClient, []int, error) {
 	var payload clientPayload
 	if err := p.getJSON("/panel/api/clients/get/"+url.PathEscape(email), &payload); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if payload.Client.Email == "" {
-		return nil, errClientNotFound
+		return nil, nil, errClientNotFound
 	}
 	if !payload.Client.Enable {
-		return nil, errClientDisabled
+		return nil, nil, errClientDisabled
 	}
 	if payload.Client.Password == "" {
-		return nil, errNoPassword
+		return nil, nil, errNoPassword
 	}
-	return &payload.Client, nil
+	if len(payload.InboundIds) == 0 {
+		return nil, nil, errNoInbound
+	}
+	return &payload.Client, payload.InboundIds, nil
 }
 
 // GetTraffic fetches traffic counters via GET /panel/api/clients/traffic/{email}.
@@ -87,6 +102,50 @@ func (p *PanelClient) GetTraffic(email string) (*panelTraffic, error) {
 		return nil, err
 	}
 	return &traffic, nil
+}
+
+// GetInboundPassword returns the Shadowsocks server password from
+// GET /panel/api/inbounds/get/{id} (settings.password).
+func (p *PanelClient) GetInboundPassword(id int) (string, error) {
+	var inbound panelInbound
+	if err := p.getJSON(fmt.Sprintf("/panel/api/inbounds/get/%d", id), &inbound); err != nil {
+		return "", err
+	}
+
+	settingsRaw, err := unwrapJSON(inbound.Settings)
+	if err != nil {
+		return "", fmt.Errorf("inbound settings: %w", err)
+	}
+	var settings shadowsocksInboundSettings
+	if err := json.Unmarshal(settingsRaw, &settings); err != nil {
+		return "", fmt.Errorf("inbound settings: %w", err)
+	}
+	if settings.Password == "" {
+		return "", errNoInboundPassword
+	}
+	return settings.Password, nil
+}
+
+// ss2022Password builds the client password for 2022-blake3-* methods:
+// inbound server password + ":" + client password.
+func ss2022Password(inboundPassword, clientPassword string) string {
+	return inboundPassword + ":" + clientPassword
+}
+
+// unwrapJSON accepts either a JSON object/array or a JSON string containing JSON.
+func unwrapJSON(raw json.RawMessage) (json.RawMessage, error) {
+	raw = json.RawMessage(strings.TrimSpace(string(raw)))
+	if len(raw) == 0 || string(raw) == "null" {
+		return nil, fmt.Errorf("empty")
+	}
+	if raw[0] == '"' {
+		var s string
+		if err := json.Unmarshal(raw, &s); err != nil {
+			return nil, err
+		}
+		return json.RawMessage(s), nil
+	}
+	return raw, nil
 }
 
 func (p *PanelClient) getJSON(path string, dest any) error {
