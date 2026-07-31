@@ -1,0 +1,157 @@
+{
+    "log": {
+        "access": "",
+        "error": "",
+        "loglevel": "warning"
+    },
+    "inbounds": [
+        {
+            "tag": "socks",
+            "port": 10808,
+            "listen": "0.0.0.0",
+            "protocol": "socks",
+            "sniffing": {
+                "enabled": true,
+                "destOverride": [
+                    "http",
+                    "tls"
+                ],
+                "routeOnly": true
+            },
+            "settings": {
+                "auth": "noauth",
+                "udp": true,
+                "allowTransparent": false
+            }
+        },
+        {
+            "tag": "http",
+            "port": 10809,
+            "listen": "0.0.0.0",
+            "protocol": "http",
+            "sniffing": {
+                "enabled": true,
+                "destOverride": [
+                    "http",
+                    "tls"
+                ],
+                "routeOnly": true
+            },
+            "settings": {
+                "auth": "noauth",
+                "udp": true,
+                "allowTransparent": false
+            }
+        }
+    ],
+    "outbounds": [
+        {
+            "mux": {
+                "concurrency": 24,
+                "enabled": true,
+                "xudpConcurrency": 24,
+                "xudpProxyUDP443": "reject"
+            },
+            "protocol": "shadowsocks",
+            "tag": "proxy",
+            "settings": {
+                "servers": [
+                    {
+                        "address": "chatgpt.com",
+                        "port": 2095,
+                        "password": "",
+                        "method": "chacha20-ietf-poly1305"
+                    }
+                ]
+            },
+            "streamSettings": {
+                "network": "httpupgrade",
+                "httpupgradeSettings": {
+                    "headers": {
+                        "Accept": "application/xhtml",
+                        "Accept-Encoding": "gzip, deflate, br, zstd",
+                        "Accept-Language": "en-US,en;q=0.9,fa;q=0.8,zh-TW;q=0.7,zh;q=0.6",
+                        "Authorization": "Bearer Lw1vBPqUxRQdyYp5H20F9ah0yr-_3Oyw_L88_QA4DgZD0CMFOsdpoiQ",
+                        "Cache-Control": "no-cache",
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "Cookie": "sessionId=a8025b9178",
+                        "Pragma": "no-cache",
+                        "Referer": "https://search.yahoo.com/",
+                        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15"
+                    },
+                    "path": "/wmlq7zsg76y504k32dy6mqqsl3mz5tfq?ed=2560",
+                    "host": "example.com"
+                },
+                "sockopt": {
+                    "domainStrategy": "ForceIP",
+                    "happyEyeballs": {
+                        "prioritizeIPv6": false,
+                        "tryDelayMs": 5,
+                        "maxConcurrentTry": 4,
+                        "interleave": 1
+                    }
+                }
+            }
+        },
+        {
+            "protocol": "direct",
+            "tag": "direct"
+        },
+        {
+            "protocol": "block",
+            "tag": "block"
+        }
+    ],
+    "dns": {
+        "queryStrategy": "UseIP",
+        "useSystemHosts": false,
+        "servers": [
+            "2a10:50c0::ad1:ff",
+            "2a10:50c0::ad2:ff",
+            "94.140.14.14",
+            "94.140.15.15"
+        ],
+        "hosts": {
+            "example.com": [
+                "8.6.112.0",
+                "8.6.112.6"
+            ]
+        }
+    },
+    "routing": {
+        "domainStrategy": "AsIs",
+        "rules": [
+            {
+                "domain": [
+                    "geosite:block"
+                ],
+                "outboundTag": "block"
+            },
+            {
+                "ip": [
+                    "geoip:block"
+                ],
+                "outboundTag": "block"
+            },
+            {
+                "domain": [
+                    "geosite:proxy"
+                ],
+                "outboundTag": "proxy"
+            },
+            {
+                "domain": [
+                    "geosite:direct"
+                ],
+                "outboundTag": "direct"
+            },
+            {
+                "ip": [
+                    "geoip:direct"
+                ],
+                "outboundTag": "direct"
+            }
+        ]
+    },
+    "remarks": "1️⃣"
+}
