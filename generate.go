@@ -141,8 +141,24 @@ func infoEntry(remarks string) map[string]any {
 		},
 		"outbounds": []any{
 			map[string]any{
-				"protocol": "block",
+				"tag":      "proxy",
+				"protocol": "socks",
+				"settings": map[string]any{
+					"address": "127.0.0.1",
+					"port":    8080,
+				},
+			},
+			map[string]any{
 				"tag":      "block",
+				"protocol": "block",
+			},
+		},
+		"routing": map[string]any{
+			"rules": []any{
+				map[string]any{
+					"inboundTag":  "socks",
+					"outboundTag": "block",
+				},
 			},
 		},
 	}
