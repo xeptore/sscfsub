@@ -127,6 +127,18 @@ func buildSubscription(templatePath, hostsPath string, creds clientCreds, usage 
 func infoEntry(remarks string) map[string]any {
 	return map[string]any{
 		"remarks": remarks,
+		"inbounds": []any{
+			map[string]any{
+				"tag":      "socks",
+				"protocol": "socks",
+				"listen":   "127.0.0.1",
+				"port":     10808,
+				"settings": map[string]any{
+					"udp":  true,
+					"auth": "noauth",
+				},
+			},
+		},
 		"outbounds": []any{
 			map[string]any{
 				"protocol": "block",
