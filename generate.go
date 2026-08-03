@@ -156,7 +156,7 @@ func infoEntry(remarks string) map[string]any {
 		"routing": map[string]any{
 			"rules": []any{
 				map[string]any{
-					"inboundTag":  "socks",
+					"inboundTag":  [...]string{"socks"},
 					"outboundTag": "block",
 				},
 			},
